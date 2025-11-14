@@ -60,4 +60,45 @@ public class ForexController {
 
         return "forex-akt-ar";
     }
+
+    @GetMapping("/hist-ar")
+    public String showHistoricalPrices(
+            @RequestParam(name = "instrument", required = false) String instrument,
+            @RequestParam(name = "granularity", required = false, defaultValue = "D") String granularity,
+            Model model) {
+
+        List<String> instruments = List.of(
+                "EUR_USD",
+                "EUR_HUF",
+                "USD_HUF",
+                "GBP_USD"
+        );
+
+        List<String> granularities = List.of(
+                "D",
+                "H4",
+                "H1"
+        );
+
+        model.addAttribute("instruments", instruments);
+        model.addAttribute("granularities", granularities);
+        model.addAttribute("selectedInstrument", instrument);
+        model.addAttribute("selectedGranularity", granularity);
+
+        List<ForexHistoricalPoint> history = List.of();
+        String errorMessage = null;
+
+        if (instrument != null && !instrument.isBlank()) {
+            try {
+                history = oandaClient.getHistoricalPrices(instrument, granularity, 10);
+            } catch (RuntimeException e) {
+                errorMessage = e.getMessage();
+            }
+        }
+
+        model.addAttribute("history", history);
+        model.addAttribute("errorMessage", errorMessage);
+
+        return "forex-hist-ar";
+    }
 }

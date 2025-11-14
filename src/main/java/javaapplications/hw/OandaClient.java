@@ -1,5 +1,7 @@
 package javaapplications.hw;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -9,6 +11,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class OandaClient {
@@ -55,7 +63,8 @@ public class OandaClient {
             }
             return body.getAccount();
         } catch (HttpStatusCodeException e) {
-            String message = "A Forex szolgáltató HTTP hibát adott vissza. Státusz: " + e.getStatusCode().value();
+            String message = "A Forex szolgáltató HTTP hibát adott vissza. Státusz: "
+                    + e.getStatusCode().value();
             throw new IllegalStateException(message, e);
         } catch (RestClientException e) {
             throw new IllegalStateException("A Forex szolgáltató elérése nem sikerült.", e);
@@ -71,10 +80,10 @@ public class OandaClient {
                 || apiKey == null || apiKey.isBlank()) {
             ForexPrice mock = new ForexPrice();
             mock.setInstrument(instrument);
-            mock.setBid(new java.math.BigDecimal("1.1000"));
-            mock.setAsk(new java.math.BigDecimal("1.1010"));
-            mock.setMid(new java.math.BigDecimal("1.1005"));
-            mock.setTime(java.time.OffsetDateTime.now());
+            mock.setBid(new BigDecimal("1.1000"));
+            mock.setAsk(new BigDecimal("1.1010"));
+            mock.setMid(new BigDecimal("1.1005"));
+            mock.setTime(OffsetDateTime.now());
             return mock;
         }
 
@@ -84,40 +93,40 @@ public class OandaClient {
 
         String url = effectiveApiUrl + "/accounts/" + accountId + "/pricing?instruments=" + instrument;
 
-        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + apiKey);
         headers.set("Content-Type", "application/json");
 
-        org.springframework.http.HttpEntity<Void> entity = new org.springframework.http.HttpEntity<>(headers);
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
 
         try {
-            org.springframework.http.ResponseEntity<String> response =
-                    restTemplate.exchange(url, org.springframework.http.HttpMethod.GET, entity, String.class);
+            ResponseEntity<String> response =
+                    restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
 
             String body = response.getBody();
             if (body == null || body.isBlank()) {
                 throw new IllegalStateException("A Forex árfolyam adat nem érhető el.");
             }
 
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(body);
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(body);
 
-            com.fasterxml.jackson.databind.JsonNode prices = root.path("prices");
+            JsonNode prices = root.path("prices");
             if (!prices.isArray() || prices.isEmpty()) {
                 throw new IllegalStateException("A Forex árfolyam adat nem érhető el.");
             }
 
-            com.fasterxml.jackson.databind.JsonNode p = prices.get(0);
+            JsonNode p = prices.get(0);
 
-            java.math.BigDecimal bid = new java.math.BigDecimal(
+            BigDecimal bid = new BigDecimal(
                     p.path("bids").get(0).path("price").asText());
-            java.math.BigDecimal ask = new java.math.BigDecimal(
+            BigDecimal ask = new BigDecimal(
                     p.path("asks").get(0).path("price").asText());
-            java.math.BigDecimal mid = bid.add(ask)
-                    .divide(java.math.BigDecimal.valueOf(2), java.math.RoundingMode.HALF_UP);
+            BigDecimal mid = bid.add(ask)
+                    .divide(BigDecimal.valueOf(2), RoundingMode.HALF_UP);
 
             String timeStr = p.path("time").asText();
-            java.time.OffsetDateTime time = java.time.OffsetDateTime.parse(timeStr);
+            OffsetDateTime time = OffsetDateTime.parse(timeStr);
 
             ForexPrice result = new ForexPrice();
             result.setInstrument(instrument);
@@ -127,12 +136,92 @@ public class OandaClient {
             result.setTime(time);
             return result;
 
-        } catch (org.springframework.web.client.HttpStatusCodeException e) {
+        } catch (HttpStatusCodeException e) {
             String message = "A Forex szolgáltató HTTP hibát adott vissza. Státusz: "
                     + e.getStatusCode().value();
             throw new IllegalStateException(message, e);
         } catch (Exception e) {
             throw new IllegalStateException("A Forex árfolyam adat lekérdezése nem sikerült.", e);
+        }
+    }
+
+    public List<ForexHistoricalPoint> getHistoricalPrices(String instrument,
+                                                          String granularity,
+                                                          int count) {
+        if (instrument == null || instrument.isBlank()) {
+            throw new IllegalArgumentException("Instrument megadása kötelező.");
+        }
+        if (granularity == null || granularity.isBlank()) {
+            granularity = "D";
+        }
+        if (count <= 0) {
+            count = 10;
+        }
+
+        if (accountId == null || accountId.isBlank()
+                || apiKey == null || apiKey.isBlank()) {
+            List<ForexHistoricalPoint> mock = new ArrayList<>();
+            BigDecimal base = new BigDecimal("1.1000");
+            for (int i = 0; i < count; i++) {
+                ForexHistoricalPoint p = new ForexHistoricalPoint();
+                p.setTime(OffsetDateTime.now().minusDays(count - i));
+                p.setClose(base.add(BigDecimal.valueOf(i).multiply(new BigDecimal("0.0010"))));
+                mock.add(p);
+            }
+            return mock;
+        }
+
+        String effectiveApiUrl = (apiUrl == null || apiUrl.isBlank())
+                ? "https://api-fxpractice.oanda.com/v3"
+                : apiUrl;
+
+        String url = effectiveApiUrl + "/instruments/" + instrument
+                + "/candles?granularity=" + granularity + "&count=" + count + "&price=M";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + apiKey);
+        headers.set("Content-Type", "application/json");
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+        try {
+            ResponseEntity<String> response =
+                    restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+
+            String body = response.getBody();
+            if (body == null || body.isBlank()) {
+                throw new IllegalStateException("A historikus árfolyam adat nem érhető el.");
+            }
+
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(body);
+
+            JsonNode candles = root.path("candles");
+            if (!candles.isArray() || candles.isEmpty()) {
+                throw new IllegalStateException("A historikus árfolyam adat nem érhető el.");
+            }
+
+            List<ForexHistoricalPoint> result = new ArrayList<>();
+            for (JsonNode c : candles) {
+                String timeStr = c.path("time").asText();
+                OffsetDateTime time = OffsetDateTime.parse(timeStr);
+                String closeStr = c.path("mid").path("c").asText();
+                BigDecimal close = new BigDecimal(closeStr);
+
+                ForexHistoricalPoint p = new ForexHistoricalPoint();
+                p.setTime(time);
+                p.setClose(close);
+                result.add(p);
+            }
+
+            return result;
+
+        } catch (HttpStatusCodeException e) {
+            String message = "A Forex szolgáltató HTTP hibát adott vissza. Státusz: "
+                    + e.getStatusCode().value();
+            throw new IllegalStateException(message, e);
+        } catch (Exception e) {
+            throw new IllegalStateException("A historikus árfolyam adat lekérdezése nem sikerült.", e);
         }
     }
 
