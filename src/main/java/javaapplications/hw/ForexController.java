@@ -4,6 +4,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.List;
 
 @Controller
 @RequestMapping("/forex")
@@ -24,5 +27,37 @@ public class ForexController {
             model.addAttribute("errorMessage", e.getMessage());
         }
         return "forex-account";
+    }
+
+    @GetMapping("/akt-ar")
+    public String showCurrentPrice(
+            @RequestParam(name = "instrument", required = false) String instrument,
+            Model model) {
+
+        List<String> instruments = List.of(
+                "EUR_USD",
+                "EUR_HUF",
+                "USD_HUF",
+                "GBP_USD"
+        );
+
+        model.addAttribute("instruments", instruments);
+        model.addAttribute("selectedInstrument", instrument);
+
+        ForexPrice price = null;
+        String errorMessage = null;
+
+        if (instrument != null && !instrument.isBlank()) {
+            try {
+                price = oandaClient.getCurrentPrice(instrument);
+            } catch (RuntimeException e) {
+                errorMessage = e.getMessage();
+            }
+        }
+
+        model.addAttribute("price", price);
+        model.addAttribute("errorMessage", errorMessage);
+
+        return "forex-akt-ar";
     }
 }
