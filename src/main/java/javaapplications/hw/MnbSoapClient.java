@@ -6,7 +6,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -24,15 +23,8 @@ import java.util.List;
 @Service
 public class MnbSoapClient {
 
-    private static final String ENDPOINT = "https://www.mnb.hu/arfolyamok.asmx";
+    private static final String ENDPOINT = "http://www.mnb.hu/arfolyamok.asmx";
 
-    /**
-     * Árfolyam lekérdezés az MNB SOAP webservice-ből.
-     *
-     * @param startDate  "YYYY-MM-DD"
-     * @param endDate    "YYYY-MM-DD"
-     * @param currency   pl. "EUR"
-     */
     public List<ExchangeRatePoint> getExchangeRates(String startDate,
                                                     String endDate,
                                                     String currency) {
@@ -41,7 +33,7 @@ public class MnbSoapClient {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.TEXT_XML);
-            headers.add("SOAPAction", "/webservices/MNBArfolyamServiceSoap/GetExchangeRates");
+            headers.add("SOAPAction", "http://www.mnb.hu/webservices/MNBArfolyamServiceSoap/GetExchangeRates");
 
             HttpEntity<String> request = new HttpEntity<>(soapRequestXml, headers);
 
@@ -55,10 +47,10 @@ public class MnbSoapClient {
             }
 
             String innerXml = extractResultXml(body);
-            return parseExchangeRates(innerXml, currency);
+            String unescaped = unescapeXml(innerXml);
+            return parseExchangeRates(unescaped, currency);
 
         } catch (Exception e) {
-
             throw new RuntimeException("Hiba az MNB SOAP hívás során: " + e.getMessage(), e);
         }
     }
@@ -66,7 +58,6 @@ public class MnbSoapClient {
     private String buildSoapRequest(String startDate,
                                     String endDate,
                                     String currency) {
-        //YYYY-MM-DD
         return
                 """
                 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
@@ -83,7 +74,6 @@ public class MnbSoapClient {
                 """.formatted(startDate, endDate, currency);
     }
 
-
     private String extractResultXml(String soapResponse) {
         String startTag = "<GetExchangeRatesResult>";
         String endTag = "</GetExchangeRatesResult>";
@@ -99,15 +89,18 @@ public class MnbSoapClient {
         return soapResponse.substring(start, end);
     }
 
-    /**
-     * Inner XML feldolgozása:
-     * <MNBExchangeRates>
-     *   <Day date="2024-01-02">
-     *     <Rate curr="EUR" unit="1">392,45</Rate>
-     *   </Day>
-     *   ...
-     * </MNBExchangeRates>
-     */
+    private String unescapeXml(String s) {
+        if (s == null) {
+            return null;
+        }
+        return s
+                .replace("&lt;", "<")
+                .replace("&gt;", ">")
+                .replace("&amp;", "&")
+                .replace("&apos;", "'")
+                .replace("&quot;", "\"");
+    }
+
     private List<ExchangeRatePoint> parseExchangeRates(String resultXml,
                                                        String currency) throws Exception {
         List<ExchangeRatePoint> result = new ArrayList<>();
@@ -133,7 +126,6 @@ public class MnbSoapClient {
 
                 String unitStr = rateEl.getAttribute("unit");
                 String valueStr = rateEl.getTextContent().trim();
-                // , to .
                 valueStr = valueStr.replace(',', '.');
 
                 BigDecimal rawValue = new BigDecimal(valueStr);

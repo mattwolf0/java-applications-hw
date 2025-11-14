@@ -2,7 +2,7 @@
 <html lang="hu" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>SOAP – MNB árfolyamok (demo)</title>
+    <title>SOAP – MNB árfolyamok</title>
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link
@@ -53,17 +53,15 @@
     <h1 class="mb-4">SOAP – MNB árfolyamok</h1>
 
     <div th:if="${errorMessage != null}" class="alert alert-danger" role="alert">
-        <span th:text="${errorMessage}">Hiba történt az árfolyam lekérdezés során.</span>
+        <span th:text="${errorMessage}">Hiba történt az árfolyam lekérdezése során.</span>
     </div>
 
-
-    <!-- Kereső űrlap -->
     <form class="row g-3 mb-4" th:action="@{/soap}" method="get">
         <div class="col-md-3">
             <label for="currency" class="form-label">Deviza</label>
             <select id="currency" name="currency" class="form-select">
                 <option value="" disabled
-                        th:selected="${selectedCurrency} == null">Válassz devizát…</option>
+                        th:selected="${selectedCurrency} == null">Deviza kiválasztása</option>
                 <option th:each="curr : ${currencies}"
                         th:value="${curr}"
                         th:text="${curr}"
@@ -88,17 +86,15 @@
 
         <div class="col-md-3 d-flex align-items-end">
             <button type="submit" class="btn btn-primary w-100">
-                Árfolyamok lekérdezése (demo)
+                Árfolyamok lekérdezése
             </button>
         </div>
     </form>
 
-    <!-- Eredmények -->
     <div th:if="${#lists.isEmpty(rates)}">
         <p class="text-muted">
-            Válassz devizát és dátum intervallumot, majd kattints az
-            „Árfolyamok lekérdezése” gombra.
-            Jelenleg tesztadatokkal töltjük a táblázatot – (megjegy: később ezt át lesz kötve az MNB SOAP szolgáltatásra.)
+            A képernyő az MNB hivatalos devizaárfolyamait jeleníti meg a megadott deviza és dátum intervallum alapján.
+            Eredmény akkor jelenik meg, ha deviza és dátum intervallum is meg van adva.
         </p>
     </div>
 
@@ -115,7 +111,7 @@
                 <thead>
                 <tr>
                     <th>Dátum</th>
-                    <th>Árfolyam (HUF)</th>
+                    <th>Árfolyam (HUF / 1 egység)</th>
                 </tr>
                 </thead>
                 <tbody>
