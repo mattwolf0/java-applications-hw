@@ -9,6 +9,6 @@ public class HomeController {
     @GetMapping({"/", "/home"})
     public String home(Model model) {
         model.addAttribute("pageTitle", "Főoldal - Java alkalmazások beadandó");
-        return "index"; // index.html sablon
+        return "index"; // src/main/resources/templates/index.html
     }
 }
