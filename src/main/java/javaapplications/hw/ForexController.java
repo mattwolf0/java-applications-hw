@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Controller
@@ -13,9 +14,11 @@ import java.util.List;
 public class ForexController {
 
     private final OandaClient oandaClient;
+    private final ForexTradeService tradeService;
 
-    public ForexController(OandaClient oandaClient) {
+    public ForexController(OandaClient oandaClient, ForexTradeService tradeService) {
         this.oandaClient = oandaClient;
+        this.tradeService = tradeService;
     }
 
     @GetMapping("/account")
@@ -100,5 +103,79 @@ public class ForexController {
         model.addAttribute("errorMessage", errorMessage);
 
         return "forex-hist-ar";
+    }
+
+    @GetMapping("/nyit")
+    public String openPosition(
+            @RequestParam(name = "instrument", required = false) String instrument,
+            @RequestParam(name = "units", required = false) BigDecimal units,
+            Model model) {
+
+        List<String> instruments = List.of(
+                "EUR_USD",
+                "EUR_HUF",
+                "USD_HUF",
+                "GBP_USD"
+        );
+
+        model.addAttribute("instruments", instruments);
+        model.addAttribute("selectedInstrument", instrument);
+        model.addAttribute("units", units);
+
+        String errorMessage = null;
+        ForexTrade openedTrade = null;
+
+        if (instrument != null && !instrument.isBlank()
+                && units != null && units.compareTo(BigDecimal.ZERO) != 0) {
+            try {
+                ForexPrice price = oandaClient.getCurrentPrice(instrument);
+                openedTrade = tradeService.openTrade(instrument, units, price.getMid());
+            } catch (RuntimeException e) {
+                errorMessage = e.getMessage();
+            }
+        }
+
+        model.addAttribute("openedTrade", openedTrade);
+        model.addAttribute("errorMessage", errorMessage);
+
+        return "forex-nyit";
+    }
+
+    @GetMapping("/poz")
+    public String showOpenPositions(Model model) {
+        List<ForexTrade> trades = tradeService.getOpenTrades();
+        model.addAttribute("trades", trades);
+        return "forex-poz";
+    }
+
+    @GetMapping("/zar")
+    public String closePosition(
+            @RequestParam(name = "tradeId", required = false) Long tradeId,
+            Model model) {
+
+        List<ForexTrade> trades = tradeService.getOpenTrades();
+        model.addAttribute("trades", trades);
+        model.addAttribute("tradeId", tradeId);
+
+        ForexTrade closedTrade = null;
+        String errorMessage = null;
+
+        if (tradeId != null) {
+            try {
+                ForexTrade trade = tradeService.getTradeById(tradeId);
+                if (trade == null) {
+                    throw new IllegalArgumentException("Nincs ilyen trade azonosító.");
+                }
+                ForexPrice price = oandaClient.getCurrentPrice(trade.getInstrument());
+                closedTrade = tradeService.closeTrade(tradeId, price.getMid());
+            } catch (RuntimeException e) {
+                errorMessage = e.getMessage();
+            }
+        }
+
+        model.addAttribute("closedTrade", closedTrade);
+        model.addAttribute("errorMessage", errorMessage);
+
+        return "forex-zar";
     }
 }
