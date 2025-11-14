@@ -5,13 +5,16 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 @Controller
 public class SoapController {
+
+    private final MnbSoapClient mnbSoapClient;
+
+    public SoapController(MnbSoapClient mnbSoapClient) {
+        this.mnbSoapClient = mnbSoapClient;
+    }
 
     @GetMapping("/soap")
     public String showSoapPage(
@@ -20,7 +23,6 @@ public class SoapController {
             @RequestParam(name = "endDate", required = false) String endDate,
             Model model) {
 
-        // legördülő listához devizák
         List<String> currencies = List.of("EUR", "USD", "CHF", "GBP");
         model.addAttribute("currencies", currencies);
 
@@ -28,25 +30,26 @@ public class SoapController {
         model.addAttribute("startDate", startDate);
         model.addAttribute("endDate", endDate);
 
-        List<ExchangeRatePoint> rates = new ArrayList<>();
+        List<ExchangeRatePoint> rates = List.of();
+        String errorMessage = null;
 
-        // ha az űrlapot már elküldték: egyelőre demo adatokkal
         if (currency != null && !currency.isBlank()
                 && startDate != null && !startDate.isBlank()
                 && endDate != null && !endDate.isBlank()) {
 
-            LocalDate start = LocalDate.parse(startDate);
-
-            // 10 napnyi demo adat – később itt lesz az MNB SOAP hívás
-            for (int i = 0; i < 10; i++) {
-                LocalDate d = start.plusDays(i);
-                BigDecimal rate = BigDecimal.valueOf(390 + i * 1.5); // demo értékek
-                rates.add(new ExchangeRatePoint(d, rate));
+            try {
+                rates = mnbSoapClient.getExchangeRates(startDate, endDate, currency);
+                if (rates.isEmpty()) {
+                    errorMessage = "Nem érkezett árfolyam adat a megadott intervallumra.";
+                }
+            } catch (Exception e) {
+                errorMessage = e.getMessage();
             }
         }
 
         model.addAttribute("rates", rates);
+        model.addAttribute("errorMessage", errorMessage);
 
-        return "soap"; // src/main/resources/templates/soap.html
+        return "soap";
     }
 }

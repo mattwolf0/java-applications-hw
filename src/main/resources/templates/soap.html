@@ -50,7 +50,12 @@
 
 <main class="container py-4">
 
-    <h1 class="mb-4">SOAP – MNB árfolyamok (demo)</h1>
+    <h1 class="mb-4">SOAP – MNB árfolyamok</h1>
+
+    <div th:if="${errorMessage != null}" class="alert alert-danger" role="alert">
+        <span th:text="${errorMessage}">Hiba történt az árfolyam lekérdezés során.</span>
+    </div>
+
 
     <!-- Kereső űrlap -->
     <form class="row g-3 mb-4" th:action="@{/soap}" method="get">
