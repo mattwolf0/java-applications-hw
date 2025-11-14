@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="hu" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Forex – Számlainformációk</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+            crossorigin="anonymous"
+    >
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" th:href="@{/}">Java Apps HW</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#mainNavbar" aria-controls="mainNavbar"
+                aria-expanded="false" aria-label="Navigáció váltása">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNavbar">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/}">Főoldal</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/soap}">SOAP</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle active" href="#" id="forexDropdown"
+                       role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Forex
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="forexDropdown">
+                        <li><a class="dropdown-item active" th:href="@{/forex/account}">Forex-account</a></li>
+                        <li><a class="dropdown-item" th:href="@{/forex/akt-ar}">Forex-AktÁr</a></li>
+                        <li><a class="dropdown-item" th:href="@{/forex/hist-ar}">Forex-HistÁr</a></li>
+                        <li><a class="dropdown-item" th:href="@{/forex/nyit}">Forex-Nyit</a></li>
+                        <li><a class="dropdown-item" th:href="@{/forex/poz}">Forex-Poz</a></li>
+                        <li><a class="dropdown-item" th:href="@{/forex/zar}">Forex-Zár</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main class="container py-4">
+
+    <h1 class="mb-4">Forex – Számlainformációk</h1>
+
+    <div th:if="${errorMessage != null}" class="alert alert-danger" role="alert">
+        <span th:text="${errorMessage}">Hiba történt a számlaadatok lekérdezése során.</span>
+    </div>
+
+    <div th:if="${account != null}">
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card mb-4">
+                    <div class="card-header">Azonosító adatok</div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Számla azonosító</dt>
+                            <dd class="col-sm-8" th:text="${account.id}">101-000-0000000-001</dd>
+
+                            <dt class="col-sm-4">Alias</dt>
+                            <dd class="col-sm-8" th:text="${account.alias}">Demo</dd>
+
+                            <dt class="col-sm-4">Devizanem</dt>
+                            <dd class="col-sm-8" th:text="${account.currency}">EUR</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card mb-4">
+                    <div class="card-header">Számla állapot</div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-5">NAV</dt>
+                            <dd class="col-sm-7" th:text="${account.nav}">0.00</dd>
+
+                            <dt class="col-sm-5">Elérhető margin</dt>
+                            <dd class="col-sm-7" th:text="${account.marginAvailable}">0.00</dd>
+
+                            <dt class="col-sm-5">Margin ráta</dt>
+                            <dd class="col-sm-7" th:text="${account.marginRate}">0.05</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card mb-4">
+                    <div class="card-header">Nyitott pozíciók és megbízások</div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-6">Nyitott tradek száma</dt>
+                            <dd class="col-sm-6" th:text="${account.openTradeCount}">0</dd>
+
+                            <dt class="col-sm-6">Nyitott pozíciók száma</dt>
+                            <dd class="col-sm-6" th:text="${account.openPositionCount}">0</dd>
+
+                            <dt class="col-sm-6">Függő megbízások száma</dt>
+                            <dd class="col-sm-6" th:text="${account.pendingOrderCount}">0</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${account == null} and ${errorMessage} == null">
+        <p class="text-muted">
+            A nézet az OANDA v20 számla összesített adatait jeleníti meg. Az adatok megjelenítéséhez a Forex hozzáférési paramétereknek beállított állapotban kell lenniük.
+        </p>
+    </div>
+
+</main>
+
+<script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous">
+</script>
+</body>
+</html>
