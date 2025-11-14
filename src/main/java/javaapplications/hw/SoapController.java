@@ -5,6 +5,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Controller
@@ -30,7 +32,7 @@ public class SoapController {
         model.addAttribute("startDate", startDate);
         model.addAttribute("endDate", endDate);
 
-        List<ExchangeRatePoint> rates = List.of();
+        List<ExchangeRatePoint> rates = new ArrayList<>();
         String errorMessage = null;
 
         if (currency != null && !currency.isBlank()
@@ -40,15 +42,24 @@ public class SoapController {
             try {
                 rates = mnbSoapClient.getExchangeRates(startDate, endDate, currency);
                 if (rates.isEmpty()) {
-                    errorMessage = "Nem érkezett árfolyam adat a megadott intervallumra.";
+                    errorMessage = "Nincs elérhető árfolyam adat a megadott intervallumra.";
                 }
             } catch (Exception e) {
                 errorMessage = e.getMessage();
             }
         }
 
+        List<String> chartLabels = new ArrayList<>();
+        List<BigDecimal> chartValues = new ArrayList<>();
+        for (ExchangeRatePoint r : rates) {
+            chartLabels.add(r.getDate().toString());
+            chartValues.add(r.getRate());
+        }
+
         model.addAttribute("rates", rates);
         model.addAttribute("errorMessage", errorMessage);
+        model.addAttribute("chartLabels", chartLabels);
+        model.addAttribute("chartValues", chartValues);
 
         return "soap";
     }

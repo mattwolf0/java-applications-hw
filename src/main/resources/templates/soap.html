@@ -93,8 +93,8 @@
 
     <div th:if="${#lists.isEmpty(rates)}">
         <p class="text-muted">
-            A képernyő az MNB hivatalos devizaárfolyamait jeleníti meg a megadott deviza és dátum intervallum alapján.
-            Eredmény akkor jelenik meg, ha deviza és dátum intervallum is meg van adva.
+            A felület az MNB hivatalos devizaárfolyamait jeleníti meg a kiválasztott deviza és dátum intervallum alapján.
+            Az adatok megjelenítéséhez deviza és dátum intervallum adható meg.
         </p>
     </div>
 
@@ -106,7 +106,7 @@
             </span>
         </h2>
 
-        <div class="table-responsive">
+        <div class="table-responsive mb-4">
             <table class="table table-striped table-sm">
                 <thead>
                 <tr>
@@ -122,6 +122,13 @@
                 </tbody>
             </table>
         </div>
+
+        <h3 class="h5 mb-3">Grafikon</h3>
+        <div class="card">
+            <div class="card-body">
+                <canvas id="rateChart" height="120"></canvas>
+            </div>
+        </div>
     </div>
 
 </main>
@@ -130,6 +137,46 @@
         src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous">
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script th:inline="javascript">
+    const chartLabels = /*[[${chartLabels}]]*/ [];
+    const chartValues = /*[[${chartValues}]]*/ [];
+
+    if (Array.isArray(chartLabels) && chartLabels.length > 0) {
+        const ctx = document.getElementById('rateChart');
+        const data = {
+            labels: chartLabels,
+            datasets: [{
+                label: 'HUF árfolyam',
+                data: chartValues,
+                tension: 0.2
+            }]
+        };
+        const config = {
+            type: 'line',
+            data: data,
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Dátum'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'HUF / 1 egység'
+                        }
+                    }
+                }
+            }
+        };
+        new Chart(ctx, config);
+    }
 </script>
 </body>
 </html>
