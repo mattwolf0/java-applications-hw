@@ -2,7 +2,7 @@
 <html lang="hu" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Forex – Historikus árak</title>
+    <title>Forex – Korábbi árfolyamok</title>
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link
@@ -50,10 +50,10 @@
 
 <main class="container py-4">
 
-    <h1 class="mb-4">Forex – Historikus árak</h1>
+    <h1 class="mb-4">Forex – Korábbi árfolyamok</h1>
 
     <div th:if="${errorMessage != null}" class="alert alert-danger" role="alert">
-        <span th:text="${errorMessage}">Hiba történt a historikus árak lekérdezése során.</span>
+        <span th:text="${errorMessage}">Hiba történt a korábbi árfolyamok lekérdezése során.</span>
     </div>
 
     <form class="row g-3 mb-4" th:action="@{/forex/hist-ar}" method="get">
@@ -83,14 +83,15 @@
 
         <div class="col-md-3 d-flex align-items-end">
             <button type="submit" class="btn btn-primary w-100">
-                Historikus árak lekérdezése
+                Árfolyamok lekérdezése
             </button>
         </div>
     </form>
 
     <div th:if="${#lists.isEmpty(history)}">
         <p class="text-muted">
-            A nézet az OANDA v20 historikus devizaárfolyamait jeleníti meg. Az adatok megjelenítéséhez instrumentum és időbontás választható.
+            A nézet az OANDA v20 korábbi devizaárfolyamait jeleníti meg. Az adatok megjelenítéséhez
+            instrumentum és időbontás választható. A táblázat mindig a legutóbbi 10 lezárt gyertyát mutatja. <!--Note: Később majd állítható lesz-->
         </p>
     </div>
 

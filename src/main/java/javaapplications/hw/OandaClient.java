@@ -160,11 +160,24 @@ public class OandaClient {
 
         if (accountId == null || accountId.isBlank()
                 || apiKey == null || apiKey.isBlank()) {
+
             List<ForexHistoricalPoint> mock = new ArrayList<>();
             BigDecimal base = new BigDecimal("1.1000");
+            OffsetDateTime baseTime = OffsetDateTime.now();
+
             for (int i = 0; i < count; i++) {
+                int step = count - i;
+                OffsetDateTime t;
+                if ("H1".equals(granularity)) {
+                    t = baseTime.minusHours(step);
+                } else if ("H4".equals(granularity)) {
+                    t = baseTime.minusHours(4L * step);
+                } else {
+                    t = baseTime.minusDays(step);
+                }
+
                 ForexHistoricalPoint p = new ForexHistoricalPoint();
-                p.setTime(OffsetDateTime.now().minusDays(count - i));
+                p.setTime(t);
                 p.setClose(base.add(BigDecimal.valueOf(i).multiply(new BigDecimal("0.0010"))));
                 mock.add(p);
             }
